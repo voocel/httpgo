@@ -2,11 +2,13 @@ package httpgo
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 // HTTP methods support
@@ -95,6 +97,12 @@ func (r *Request) SetForm(m map[string]string) *Request {
 func (r *Request) SetJSON(v string) *Request {
 	r.setBody(strings.NewReader(v))
 	r.Header.Set("Content-Type", JSON)
+	return r
+}
+
+func (r *Request)SetTimeout(t time.Duration) *Request {
+	ctx, _ := context.WithTimeout(r.Context(), t)
+	r.Request = r.WithContext(ctx)
 	return r
 }
 

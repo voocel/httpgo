@@ -1,9 +1,16 @@
 package httpgo
 
-import "testing"
+import (
+	"testing"
+	"time"
+)
 
 func TestGet(t *testing.T) {
 	t.Log(Get("https://qq.com").Do())
+}
+
+func TestGetTimeout(t *testing.T) {
+	t.Log(Get("https://voocel.com").SetTimeout(1 * time.Second).Do())
 }
 
 func TestPost(t *testing.T) {
