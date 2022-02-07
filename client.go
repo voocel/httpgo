@@ -1,7 +1,7 @@
 package httpgo
 
 import (
-	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/http/cookiejar"
@@ -65,7 +65,7 @@ func basicDo(c *Client) Handle {
 			return
 		}
 		defer resp.Response.Body.Close()
-		resp.Body, resp.Err = io.ReadAll(resp.Response.Body)
+		resp.Body, resp.Err = ioutil.ReadAll(resp.Response.Body)
 		return
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -100,7 +101,7 @@ func (r *Request) SetJSON(v string) *Request {
 	return r
 }
 
-func (r *Request)SetTimeout(t time.Duration) *Request {
+func (r *Request) SetTimeout(t time.Duration) *Request {
 	ctx, _ := context.WithTimeout(r.Context(), t)
 	r.Request = r.WithContext(ctx)
 	return r
@@ -110,7 +111,7 @@ func (r *Request)SetTimeout(t time.Duration) *Request {
 func (r *Request) setBody(body io.Reader) {
 	rc, ok := body.(io.ReadCloser)
 	if !ok && body != nil {
-		rc = io.NopCloser(body)
+		rc = ioutil.NopCloser(body)
 	}
 	r.Body = rc
 
@@ -120,21 +121,21 @@ func (r *Request) setBody(body io.Reader) {
 		buf := v.Bytes()
 		r.GetBody = func() (io.ReadCloser, error) {
 			r := bytes.NewReader(buf)
-			return io.NopCloser(r), nil
+			return ioutil.NopCloser(r), nil
 		}
 	case *bytes.Reader:
 		r.ContentLength = int64(v.Len())
 		snapshot := *v
 		r.GetBody = func() (io.ReadCloser, error) {
 			r := snapshot
-			return io.NopCloser(&r), nil
+			return ioutil.NopCloser(&r), nil
 		}
 	case *strings.Reader:
 		r.ContentLength = int64(v.Len())
 		snapshot := *v
 		r.GetBody = func() (io.ReadCloser, error) {
 			r := snapshot
-			return io.NopCloser(&r), nil
+			return ioutil.NopCloser(&r), nil
 		}
 	default:
 	}
