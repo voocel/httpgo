@@ -3,25 +3,25 @@
     <p align="center">A fast and simple go http client </p>
 </p>
 
-## Installation
+## ⚙️ Installation
 
 ```
 go get -u github.com/voocel/httpgo
 ```
 
-## Example
-#### GET
+## 👀 Example
+#### 📖GET
 
 ```go
 res, err := httpgo.Get("http://www.google.com").Do()
 ```
 
-#### POST
+#### 📖POST
 ```go
 res, err := httpgo.Post("http://www.google.com").Do()
 ```
 
-#### SetTimeout
+#### 📖SetTimeout
 ```go
 res, err := httpgo.Get("http://www.google.com").SetTimeout(5 * time.Second).Do()
 ```
