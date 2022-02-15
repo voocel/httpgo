@@ -17,7 +17,7 @@ type Client struct {
 	handle Handle
 }
 
-// NewClient 构建client结构
+// NewClient create a client
 func NewClient() *Client {
 	jar, _ := cookiejar.New(nil)
 	//jar, _ := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
@@ -32,7 +32,8 @@ func NewClient() *Client {
 				IdleConnTimeout:        time.Second * 60,
 				TLSHandshakeTimeout:    time.Second * 5,
 				ExpectContinueTimeout:  time.Second * 1,
-				MaxResponseHeaderBytes: 1024 * 5, // 限制响应头的大小，避免依赖的服务过多使用响应头
+				// Limit the size of response headers to avoid excessive use of response headers by dependent services
+				MaxResponseHeaderBytes: 1024 * 5,
 				DisableCompression:     false,
 			},
 			CheckRedirect: nil,
@@ -44,7 +45,7 @@ func NewClient() *Client {
 	return c
 }
 
-func (c *Client) Do(req *Request) *Response {
+func (c *Client) do(req *Request) *Response {
 	res := c.handle(req)
 	if res == nil {
 		return &Response{

@@ -54,7 +54,7 @@ func Post(rawUrl string) *Request {
 	return NewRequest(POST, rawUrl)
 }
 
-// NewRequest 构建请求体
+// NewRequest create request
 func NewRequest(method, rawUrl string) *Request {
 	req, err := http.NewRequest(method, parseScheme(rawUrl), nil)
 	return &Request{
@@ -67,37 +67,43 @@ func NewRequest(method, rawUrl string) *Request {
 	}
 }
 
-// Do 最终执行请求
+// Do finish do
 func (r *Request) Do() *Response {
-	return r.callback(r.client.Do(r))
+	return r.callback(r.client.do(r))
 }
 
-// SetQuery 设置GET请求参数
-func (r *Request) SetQuery(m map[string]string) *Request {
-	if len(r.URL.RawQuery) > 0 {
-		r.URL.RawQuery += "&"
-	}
+// SetQueries set URL query params for the request
+func (r *Request) SetQueries(m map[string]string) *Request {
 	for k, v := range m {
-		r.URL.RawQuery += k + "=" + v
+		r.SetQuery(k, v)
 	}
 	return r
 }
 
-// SetForm 设置POST表单参数
+// SetQuery set an URL query parameter for the request
+func (r *Request) SetQuery(key, value string) *Request {
+	if len(r.URL.RawQuery) > 0 {
+		r.URL.RawQuery += "&"
+	}
+	r.URL.RawQuery += key + "=" + value
+	return r
+}
+
+// SetForm set the form data from a map
 func (r *Request) SetForm(m map[string]string) *Request {
 	var payload = url.Values{}
 	for k, v := range m {
 		payload.Add(k, v)
 	}
 	r.setBody(strings.NewReader(payload.Encode()))
-	r.Header.Set("Content-Type", FORM_URLENCODED)
+	r.SetHeader("Content-Type", FORM_URLENCODED)
 	return r
 }
 
-// SetJSON 设置JSON参数
+// SetJSON set the json data
 func (r *Request) SetJSON(v string) *Request {
 	r.setBody(strings.NewReader(v))
-	r.Header.Set("Content-Type", JSON)
+	r.SetHeader("Content-Type", JSON)
 	return r
 }
 
@@ -107,7 +113,7 @@ func (r *Request) SetTimeout(t time.Duration) *Request {
 	return r
 }
 
-// 设置body
+// setBody set the request body, accepts string, []byte, io.Reader, map and struct
 func (r *Request) setBody(body io.Reader) {
 	rc, ok := body.(io.ReadCloser)
 	if !ok && body != nil {
@@ -143,10 +149,37 @@ func (r *Request) setBody(body io.Reader) {
 		r.Body = http.NoBody
 		r.GetBody = func() (io.ReadCloser, error) { return http.NoBody, nil }
 	}
-
 }
 
-// 解析协议头
+// SetHeaders set headers from a map for the request
+func (r *Request) SetHeaders(m map[string]string) *Request {
+	for k, v := range m {
+		r.SetHeader(k, v)
+	}
+	return r
+}
+
+// AddHeaders add headers from a map for the request
+func (r *Request) AddHeaders(m map[string]string) *Request {
+	for k, v := range m {
+		r.AddHeader(k, v)
+	}
+	return r
+}
+
+// SetHeader set a header for the request
+func (r *Request) SetHeader(key, value string) *Request {
+	r.Header.Set(key, value)
+	return r
+}
+
+// AddHeader add a header for the request
+func (r *Request) AddHeader(key, value string) *Request {
+	r.Header.Add(key, value)
+	return r
+}
+
+// parseScheme parse scheme
 func parseScheme(url string) string {
 	if strings.HasPrefix(url, "https://") || strings.HasPrefix(url, "http://") {
 		return url
