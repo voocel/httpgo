@@ -3,7 +3,6 @@ package httpgo
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -82,10 +81,12 @@ func (r *Request) SetQueries(m map[string]string) *Request {
 
 // SetQuery set an URL query parameter for the request
 func (r *Request) SetQuery(key, value string) *Request {
+	v := make(url.Values)
+	v.Add(key, value)
 	if len(r.URL.RawQuery) > 0 {
 		r.URL.RawQuery += "&"
 	}
-	r.URL.RawQuery += key + "=" + value
+	r.URL.RawQuery += v.Encode()
 	return r
 }
 
@@ -179,16 +180,14 @@ func (r *Request) AddHeader(key, value string) *Request {
 	return r
 }
 
-// parseScheme parse scheme
-func parseScheme(url string) string {
-	if strings.HasPrefix(url, "https://") || strings.HasPrefix(url, "http://") {
-		return url
+// parseScheme parse request URL
+func parseScheme(rawUrl string) string {
+	u, err := url.Parse(rawUrl)
+	if err != nil {
+		panic(err)
 	}
-	if strings.HasPrefix(url, ":") {
-		return fmt.Sprintf("http://localhost%s", url)
+	if !u.IsAbs() {
+		u.Scheme = "https"
 	}
-	if strings.HasPrefix(url, "/") {
-		return fmt.Sprintf("http://localhost%s", url)
-	}
-	return fmt.Sprintf("http://%s", url)
+	return u.String()
 }
