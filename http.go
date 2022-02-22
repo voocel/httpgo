@@ -180,6 +180,18 @@ func (r *Request) AddHeader(key, value string) *Request {
 	return r
 }
 
+// SetUA set user-agent for the request
+func (r *Request) SetUA(ua string) *Request {
+	r.Header.Set("User-Agent", ua)
+	return r
+}
+
+// AddCookie add cookie for the request
+func (r *Request) AddCookie(c *http.Cookie) *Request {
+	r.Request.AddCookie(c)
+	return r
+}
+
 // parseScheme parse request URL
 func parseScheme(rawUrl string) string {
 	u, err := url.Parse(rawUrl)
