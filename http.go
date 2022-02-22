@@ -192,6 +192,12 @@ func (r *Request) AddCookie(c *http.Cookie) *Request {
 	return r
 }
 
+// BasicAuth make basic authentication
+func (r *Request) BasicAuth(username, password string) *Request {
+	r.Request.SetBasicAuth(username, password)
+	return r
+}
+
 // parseScheme parse request URL
 func parseScheme(rawUrl string) string {
 	u, err := url.Parse(rawUrl)
