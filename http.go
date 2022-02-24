@@ -5,8 +5,11 @@ import (
 	"context"
 	"io"
 	"io/ioutil"
+	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -26,14 +29,16 @@ const (
 const (
 	JSON            = "application/json;charset=UTF-8"
 	FORM_URLENCODED = "application/x-www-form-urlencoded;charset=UTF-8"
+	TEXT            = "text/plain;charset=UTF-8"
 	FORM_DATA       = "multipart/form-data;charset=UTF-8"
 )
 
 type Request struct {
 	*http.Request
-	Err      error
-	client   *Client
-	callback func(*Response) *Response
+	Err        error
+	client     *Client
+	fileWriter *multipart.Writer
+	callback   func(*Response) *Response
 }
 
 type Response struct {
@@ -105,6 +110,38 @@ func (r *Request) SetForm(m map[string]string) *Request {
 func (r *Request) SetJSON(v string) *Request {
 	r.setBody(strings.NewReader(v))
 	r.SetHeader("Content-Type", JSON)
+	return r
+}
+
+// SetText set the text data
+func (r *Request) SetText(v string) *Request {
+	r.setBody(strings.NewReader(v))
+	r.SetHeader("Content-Type", TEXT)
+	return r
+}
+
+func (r *Request) SetFile(fieldname, filename string) *Request {
+	buf := new(bytes.Buffer)
+	if r.fileWriter == nil {
+		r.fileWriter = multipart.NewWriter(buf)
+	}
+	f, err := os.Open(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+	fw, err := r.fileWriter.CreateFormFile(fieldname, filepath.Base(filename))
+	if err != nil {
+		panic(err)
+	}
+	defer r.fileWriter.Close()
+	_, err = io.Copy(fw, f)
+	if err != nil {
+		panic(err)
+	}
+
+	r.setBody(buf)
+	r.SetHeader("Content-Type", r.fileWriter.FormDataContentType())
 	return r
 }
 
