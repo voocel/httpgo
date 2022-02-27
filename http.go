@@ -48,6 +48,20 @@ type Response struct {
 	Err  error
 }
 
+type AsyncResponse struct {
+	Resp *Response
+	Err  error
+}
+
+func AsyncGet(rawUrl string, ch chan<- *AsyncResponse) {
+	go func() {
+		resp := Get(rawUrl).Do()
+		ch <- &AsyncResponse{
+			Resp: resp,
+		}
+	}()
+}
+
 // Get http request
 func Get(rawUrl string) *Request {
 	return NewRequest(GET, rawUrl)
