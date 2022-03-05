@@ -9,7 +9,7 @@
 go get -u github.com/voocel/httpgo
 ```
 
-## 👀 Example
+## 👀 Examples
 #### 📖GET
 
 ```go
@@ -41,3 +41,4 @@ res, err := httpgo.Get("http://www.google.com").SetTimeout(5 * time.Second).Do()
 * [x] SetUA(`ua string`)
 * [x] AddCookie(`c *http.Cookie`)
 * [x] BasicAuth(`username, password string`)
+* [ ] Upload(`fieldname, filename string`)
