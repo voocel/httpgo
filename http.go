@@ -62,6 +62,16 @@ func AsyncGet(rawUrl string, ch chan<- *AsyncResponse) {
 	}()
 }
 
+// GetBody get response body
+func (r *Response) GetBody() []byte {
+	return r.Body
+}
+
+// GetStatusCode get HTTP status code
+func (r *Response) GetStatusCode() int {
+	return r.StatusCode
+}
+
 // Get http request
 func Get(rawUrl string) *Request {
 	return NewRequest(GET, rawUrl)
