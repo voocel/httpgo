@@ -1,3 +1,3 @@
-module httpgo
+module github.com/voocel/httpgo
 
-go 1.17
+go 1.14
