@@ -20,20 +20,20 @@ func TestPost(t *testing.T) {
 }
 
 func TestHeader(t *testing.T) {
-	r := Post("https://qq.com").SetUA("test-ua").
+	r, err := Post("https://qq.com").SetUA("test-ua").
 		AddCookie(&http.Cookie{
 			Name:  "http_go_cookie",
 			Value: "http_go",
 		}).
 		AddHeader("test", "value").Do()
-	t.Log(r)
+	t.Log(r, err)
 }
 
 func TestAsync(t *testing.T) {
 	ch := make(chan *AsyncResponse)
 	AsyncGet("https://qq.com", ch)
 
-	timer := time.NewTimer(5*time.Second)
+	timer := time.NewTimer(5 * time.Second)
 	for {
 		select {
 		case res := <-ch:
@@ -45,5 +45,6 @@ func TestAsync(t *testing.T) {
 }
 
 func TestRequest_SetFile(t *testing.T) {
-	Post("http://127.0.0.1:3333/file").SetFile("file", "a.txt").Do()
+	r, err := Post("http://127.0.0.1:3333/file").SetFile("file", "abc.txt").Do()
+	t.Log(r, err)
 }

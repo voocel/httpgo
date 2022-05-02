@@ -11,7 +11,7 @@ import (
 
 var DefaultClient = NewClient()
 
-type Handle func(*Request) *Response
+type Handle func(*Request) (*Response, error)
 
 type Client struct {
 	*http.Client
@@ -29,10 +29,10 @@ func NewClient() *Client {
 					Timeout:   time.Second * 10,
 					KeepAlive: time.Second * 30,
 				}).DialContext,
-				MaxIdleConns:           50,
-				IdleConnTimeout:        time.Second * 60,
-				TLSHandshakeTimeout:    time.Second * 5,
-				ExpectContinueTimeout:  time.Second * 1,
+				MaxIdleConns:          50,
+				IdleConnTimeout:       time.Second * 60,
+				TLSHandshakeTimeout:   time.Second * 5,
+				ExpectContinueTimeout: time.Second * 1,
 				// Limit the size of response headers to avoid excessive use of response headers by dependent services
 				MaxResponseHeaderBytes: 1024 * 5,
 				DisableCompression:     false,
@@ -46,33 +46,32 @@ func NewClient() *Client {
 	return c
 }
 
-func (c *Client) do(req *Request) *Response {
-	res := c.handle(req)
+func (c *Client) do(req *Request) (res *Response, err error) {
+	res, err = c.handle(req)
 	if res == nil {
 		return &Response{
 			Req: req,
-		}
+		}, err
 	}
-	return res
+	return
 }
 
 func basicDo(c *Client) Handle {
-	return func(req *Request) (resp *Response) {
+	return func(req *Request) (resp *Response, err error) {
 		resp = &Response{
 			Req: req,
 		}
-		resp.Response, resp.Err = c.Client.Do(req.Request)
-
-		if resp.Err != nil {
+		resp.Response, err = c.Client.Do(req.Request)
+		if err != nil {
 			return
 		}
 		defer resp.Response.Body.Close()
 
 		buf := new(bytes.Buffer)
-		_, err := io.Copy(buf, resp.Response.Body)
+		_, err = io.Copy(buf, resp.Response.Body)
 		resp.Body = buf.Bytes()
 		buf.Reset()
-		resp.Err = err
+
 		return
 	}
 }

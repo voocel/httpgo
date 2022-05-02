@@ -38,14 +38,13 @@ type Request struct {
 	Err        error
 	client     *Client
 	fileWriter *multipart.Writer
-	callback   func(*Response) *Response
+	callback   func(*Response, error) (*Response, error)
 }
 
 type Response struct {
 	*http.Response
 	Req  *Request
 	Body []byte
-	Err  error
 }
 
 type AsyncResponse struct {
@@ -55,9 +54,10 @@ type AsyncResponse struct {
 
 func AsyncGet(rawUrl string, ch chan<- *AsyncResponse) {
 	go func() {
-		resp := Get(rawUrl).Do()
+		resp, err := Get(rawUrl).Do()
 		ch <- &AsyncResponse{
 			Resp: resp,
+			Err: err,
 		}
 	}()
 }
@@ -89,15 +89,20 @@ func NewRequest(method, rawUrl string) *Request {
 		Request: req,
 		Err:     err,
 		client:  DefaultClient,
-		callback: func(resp *Response) *Response {
-			return resp
+		callback: func(resp *Response, err error) (*Response, error) {
+			return resp, err
 		},
 	}
 }
 
 // Do finish do
-func (r *Request) Do() *Response {
-	return r.callback(r.client.do(r))
+func (r *Request) Do() (resp *Response, err error) {
+	if r.Err != nil {
+		err = r.Err
+		return
+	}
+	resp, err = r.client.do(r)
+	return r.callback(resp, err)
 }
 
 // SetQueries set URL query params for the request
@@ -144,31 +149,40 @@ func (r *Request) SetText(v string) *Request {
 	return r
 }
 
-func (r *Request) SetFile(fieldname, filename string) *Request {
+// SetFile set the file
+func (r *Request) SetFile(field, filename string) *Request {
 	buf := new(bytes.Buffer)
 	if r.fileWriter == nil {
 		r.fileWriter = multipart.NewWriter(buf)
 	}
 	f, err := os.Open(filename)
 	if err != nil {
-		panic(err)
+		r.Err = err
+		return r
 	}
 	defer f.Close()
-	fw, err := r.fileWriter.CreateFormFile(fieldname, filepath.Base(filename))
+
+	fw, err := r.fileWriter.CreateFormFile(field, filepath.Base(filename))
 	if err != nil {
-		panic(err)
-	}
-	defer r.fileWriter.Close()
-	_, err = io.Copy(fw, f)
-	if err != nil {
-		panic(err)
+		r.Err = err
+		return r
 	}
 
+	_, err = io.Copy(fw, f)
+	if err != nil {
+		r.Err = err
+		return r
+	}
+
+	// must be closed multipart before setBody, trail boundary end line by closed
+	r.fileWriter.Close()
 	r.setBody(buf)
 	r.SetHeader("Content-Type", r.fileWriter.FormDataContentType())
+
 	return r
 }
 
+// SetTimeout set the request timeout
 func (r *Request) SetTimeout(t time.Duration) *Request {
 	ctx, _ := context.WithTimeout(r.Context(), t)
 	r.Request = r.WithContext(ctx)
