@@ -16,21 +16,21 @@ import (
 
 // HTTP methods support
 const (
-	POST    = "POST"
 	GET     = "GET"
-	HEAD    = "HEAD"
+	POST    = "POST"
 	PUT     = "PUT"
-	DELETE  = "DELETE"
+	HEAD    = "HEAD"
 	PATCH   = "PATCH"
+	DELETE  = "DELETE"
 	OPTIONS = "OPTIONS"
 )
 
 // content type support
 const (
 	JSON            = "application/json;charset=UTF-8"
-	FORM_URLENCODED = "application/x-www-form-urlencoded;charset=UTF-8"
 	TEXT            = "text/plain;charset=UTF-8"
 	FORM_DATA       = "multipart/form-data;charset=UTF-8"
+	FORM_URLENCODED = "application/x-www-form-urlencoded;charset=UTF-8"
 )
 
 type Request struct {
@@ -52,12 +52,47 @@ type AsyncResponse struct {
 	Err  error
 }
 
+// Get http request
+func Get(rawUrl string) *Request {
+	return NewRequest(GET, rawUrl)
+}
+
+// Post http request
+func Post(rawUrl string) *Request {
+	return NewRequest(POST, rawUrl)
+}
+
+// Put http request
+func Put(rawUrl string) *Request {
+	return NewRequest(PUT, rawUrl)
+}
+
+// Head http request
+func Head(rawUrl string) *Request {
+	return NewRequest(HEAD, rawUrl)
+}
+
+// Patch http request
+func Patch(rawUrl string) *Request {
+	return NewRequest(PATCH, rawUrl)
+}
+
+// Delete http request
+func Delete(rawUrl string) *Request {
+	return NewRequest(DELETE, rawUrl)
+}
+
+// Options http request
+func Options(rawUrl string) *Request {
+	return NewRequest(OPTIONS, rawUrl)
+}
+
 func AsyncGet(rawUrl string, ch chan<- *AsyncResponse) {
 	go func() {
 		resp, err := Get(rawUrl).Do()
 		ch <- &AsyncResponse{
 			Resp: resp,
-			Err: err,
+			Err:  err,
 		}
 	}()
 }
@@ -70,16 +105,6 @@ func (r *Response) GetBody() []byte {
 // GetStatusCode get HTTP status code
 func (r *Response) GetStatusCode() int {
 	return r.StatusCode
-}
-
-// Get http request
-func Get(rawUrl string) *Request {
-	return NewRequest(GET, rawUrl)
-}
-
-// Post http request
-func Post(rawUrl string) *Request {
-	return NewRequest(POST, rawUrl)
 }
 
 // NewRequest create request
@@ -275,6 +300,7 @@ func (r *Request) BasicAuth(username, password string) *Request {
 
 // parseScheme parse request URL
 func parseScheme(rawUrl string) string {
+	rawUrl = strings.TrimSpace(rawUrl)
 	u, err := url.Parse(rawUrl)
 	if err != nil {
 		panic(err)
