@@ -109,7 +109,8 @@ func (r *Response) GetStatusCode() int {
 
 // NewRequest create request
 func NewRequest(method, rawUrl string) *Request {
-	req, err := http.NewRequest(method, parseScheme(rawUrl), nil)
+	rawUrl, _ = parseScheme(rawUrl)
+	req, err := http.NewRequest(method, rawUrl, nil)
 	return &Request{
 		Request: req,
 		Err:     err,
@@ -299,14 +300,17 @@ func (r *Request) BasicAuth(username, password string) *Request {
 }
 
 // parseScheme parse request URL
-func parseScheme(rawUrl string) string {
+func parseScheme(rawUrl string) (string, error) {
 	rawUrl = strings.TrimSpace(rawUrl)
+	if !strings.Contains(rawUrl, "://") {
+		rawUrl = "http://" + rawUrl
+	}
 	u, err := url.Parse(rawUrl)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 	if !u.IsAbs() {
 		u.Scheme = "https"
 	}
-	return u.String()
+	return u.String(), nil
 }
