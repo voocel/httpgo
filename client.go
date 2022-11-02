@@ -68,6 +68,7 @@ func basicDo(c *Client) Handle {
 		defer resp.Response.Body.Close()
 
 		buf := new(bytes.Buffer)
+		buf.Grow(1024)
 		_, err = io.Copy(buf, resp.Response.Body)
 		resp.Body = buf.Bytes()
 		buf.Reset()
