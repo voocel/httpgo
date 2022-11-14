@@ -2,6 +2,7 @@ package httpgo
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"net"
 	"net/http"
@@ -19,25 +20,27 @@ type Client struct {
 }
 
 // NewClient create a client
-func NewClient() *Client {
+func NewClient(mfs ...MiddlewareFunc) *Client {
 	jar, _ := cookiejar.New(nil)
 	//jar, _ := cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+	transport := &http.Transport{
+		DialContext: (&net.Dialer{
+			Timeout:   time.Second * 10,
+			KeepAlive: time.Second * 30,
+		}).DialContext,
+		MaxIdleConns:           50,
+		IdleConnTimeout:        time.Second * 60,
+		TLSHandshakeTimeout:    time.Second * 5,
+		ExpectContinueTimeout:  time.Second * 1,
+		// Limit the size of response headers to avoid excessive use of response headers by dependent services
+		MaxResponseHeaderBytes: 1024 * 5,
+		DisableCompression:     false,
+	}
+	t := Middleware(transport, mfs...)
 	c := &Client{
 		Client: &http.Client{
-			Transport: &http.Transport{
-				DialContext: (&net.Dialer{
-					Timeout:   time.Second * 10,
-					KeepAlive: time.Second * 30,
-				}).DialContext,
-				MaxIdleConns:          50,
-				IdleConnTimeout:       time.Second * 60,
-				TLSHandshakeTimeout:   time.Second * 5,
-				ExpectContinueTimeout: time.Second * 1,
-				// Limit the size of response headers to avoid excessive use of response headers by dependent services
-				MaxResponseHeaderBytes: 1024 * 5,
-				DisableCompression:     false,
-			},
-			CheckRedirect: nil,
+			Transport: t,
+			CheckRedirect: defaultCheckRedirect,
 			Jar:           jar,
 			Timeout:       0,
 		},
@@ -75,4 +78,11 @@ func basicDo(c *Client) Handle {
 
 		return
 	}
+}
+
+func defaultCheckRedirect(req *http.Request, via []*http.Request) error {
+	if len(via) >= 10 {
+		return errors.New("stopped after 10 redirects")
+	}
+	return nil
 }
