@@ -26,6 +26,15 @@ res, err := httpgo.Post("http://www.google.com").Do()
 res, err := httpgo.Get("http://www.google.com").SetTimeout(5 * time.Second).Do()
 ```
 
+#### 📖Middleware
+```go
+var l *log.logger
+c := httpgo.NewHttpClient(WithLogger(l))
+
+res, err := c.Get("http://www.google.com").Do()
+res, err := c.Post("http://www.google.com").Do()
+```
+
 ## 🔥 Supported Methods
 * [x] SetQuery(`key, value string`)
 * [x] SetQueries(`m map[string]string`)
@@ -41,4 +50,4 @@ res, err := httpgo.Get("http://www.google.com").SetTimeout(5 * time.Second).Do()
 * [x] SetUA(`ua string`)
 * [x] AddCookie(`c *http.Cookie`)
 * [x] BasicAuth(`username, password string`)
-* [ ] Upload(`fieldname, filename string`)
+* [x] Upload(`fieldname, filename string`)
