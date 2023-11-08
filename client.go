@@ -7,10 +7,17 @@ import (
 	"net"
 	"net/http"
 	"net/http/cookiejar"
+	"sync"
 	"time"
 )
 
 var DefaultClient = NewClient()
+
+var pool = sync.Pool{
+	New: func() interface{} {
+		return bytes.NewBuffer(make([]byte, 0, 1024))
+	},
+}
 
 type Handle func(*Request) (*Response, error)
 
@@ -28,10 +35,10 @@ func NewClient(mfs ...MiddlewareFunc) *Client {
 			Timeout:   time.Second * 10,
 			KeepAlive: time.Second * 30,
 		}).DialContext,
-		MaxIdleConns:           50,
-		IdleConnTimeout:        time.Second * 60,
-		TLSHandshakeTimeout:    time.Second * 5,
-		ExpectContinueTimeout:  time.Second * 1,
+		MaxIdleConns:          50,
+		IdleConnTimeout:       time.Second * 60,
+		TLSHandshakeTimeout:   time.Second * 5,
+		ExpectContinueTimeout: time.Second * 1,
 		// Limit the size of response headers to avoid excessive use of response headers by dependent services
 		MaxResponseHeaderBytes: 1024 * 5,
 		DisableCompression:     false,
@@ -39,7 +46,7 @@ func NewClient(mfs ...MiddlewareFunc) *Client {
 	t := Middleware(transport, mfs...)
 	c := &Client{
 		Client: &http.Client{
-			Transport: t,
+			Transport:     t,
 			CheckRedirect: defaultCheckRedirect,
 			Jar:           jar,
 			Timeout:       0,
@@ -70,11 +77,11 @@ func basicDo(c *Client) Handle {
 		}
 		defer resp.Response.Body.Close()
 
-		buf := new(bytes.Buffer)
-		buf.Grow(1024)
+		buf := pool.Get().(*bytes.Buffer)
 		_, err = io.Copy(buf, resp.Response.Body)
 		resp.Body = buf.Bytes()
 		buf.Reset()
+		pool.Put(buf)
 
 		return
 	}
