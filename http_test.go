@@ -1,8 +1,10 @@
 package httpgo
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"sync"
 	"testing"
 	"time"
 )
@@ -16,7 +18,24 @@ func TestGetTimeout(t *testing.T) {
 }
 
 func TestPost(t *testing.T) {
-	t.Log(Post("127.0.0.1/post").SetForm(map[string]string{"name": "peter", "address": "unknown"}).Do())
+	t.Log(Post("127.0.0.1:3333/post").SetForm(map[string]string{"name": "peter", "address": "unknown"}).Do())
+}
+
+func TestPostJSON(t *testing.T) {
+	var wg sync.WaitGroup
+	for i := 0; i < 10; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			m := map[string]string{
+				"name": fmt.Sprint("tony-", i),
+				"addr": "unknown",
+			}
+			b, _ := json.Marshal(m)
+			t.Log(Post("127.0.0.1:3333/post").SetJSON(string(b)).Do())
+		}(i)
+	}
+	wg.Wait()
 }
 
 func TestHeader(t *testing.T) {
